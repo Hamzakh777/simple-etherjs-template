@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const ethers = require("ethers");
 const fs = require("fs-extra");
 
@@ -9,8 +9,14 @@ async function main() {
   const provider = new ethers.providers.JsonRpcBatchProvider(
     process.env.RPC_SERVER
   );
+
+  const encryptedJson = fs.readFileSync("./encryptedKey.json", "utf8");
   // A class that inherits Signer and can sign transactions and messages using a private key
-  const wallet = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY, provider);
+  let wallet = new ethers.Wallet.fromEncryptedJsonSync(
+    encryptedJson,
+    process.env.PRIVATE_KEY_PASSWORD
+  );
+  wallet = await wallet.connect(provider);
 
   const abi = fs.readFileSync(
     "./dist/SimpleStorage_sol_SimpleStorage.abi",
