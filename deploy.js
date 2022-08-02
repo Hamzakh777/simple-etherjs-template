@@ -1,3 +1,4 @@
+require('dotenv').config();
 const ethers = require("ethers");
 const fs = require("fs-extra");
 
@@ -6,23 +7,52 @@ async function main() {
   // HTTP://127.0.0.1:7545
   // Provider gives read only access to the Ethereum Network
   const provider = new ethers.providers.JsonRpcBatchProvider(
-    "HTTP://127.0.0.1:7545"
+    process.env.RPC_SERVER
   );
   // A class that inherits Signer and can sign transactions and messages using a private key
-  const wallet = new ethers.Wallet(
-    "9f1e6652394221718b5f6b5f38613972a91a6fdfee40fac4a2703f2db40c4ba4",
-    provider
-  );
+  const wallet = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY, provider);
 
-  const abi = fs.readFileSync("./dist/SimpleStorage_sol_SimpleStorage.abi", "utf8");
-  const binary = fs.readFileSync("./dist/SimpleStorage_sol_SimpleStorage.bin", "utf8")
+  const abi = fs.readFileSync(
+    "./dist/SimpleStorage_sol_SimpleStorage.abi",
+    "utf8"
+  );
+  const binary = fs.readFileSync(
+    "./dist/SimpleStorage_sol_SimpleStorage.bin",
+    "utf8"
+  );
   // this is what we use to deploy a contract
   const contractFactory = new ethers.ContractFactory(abi, binary, wallet);
   console.log("Deploying, please wait...");
 
   // deploy
-  const contract = await contractFactory.deploy();
+  const contract = await contractFactory
+    .deploy
+    // we can do overrides
+    // {
+    //   gasLimit: 10000000000,
+    // }
+    ();
+
+  // Transaction receipts
+  const transactionReceipt = await contract.deployTransaction.wait(1);
+  // what you get when the transaction has been processed by waiting for 1 block
+  console.log("Here is the transaction receipt: ");
+  console.log(transactionReceipt);
+  // what you get when you just create your transaction
+  console.log("Here is the deployment transaction: (transaction response)");
+  console.log(contract.deployTransaction);
+
   console.log(contract);
+
+  // call some functions on the contract
+  const currentFavoriteNumber = await contract.retrieve();
+  // Ethers.js has a utility called BigNumber for big numbers
+  console.log("favorite number", currentFavoriteNumber.toString());
+
+  const transactionResponse = await contract.store("7");
+  const storeTransactionReceipt = await transactionResponse.wait(1);
+  const updatedFavoriteNumber = await contract.retrieve();
+  console.log("update favorite number is", updatedFavoriteNumber.toString());
 }
 
 main()
