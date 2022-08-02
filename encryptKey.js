@@ -6,7 +6,7 @@ const fs = require("fs-extra");
 async function main() {
   const wallet = new ethers.Wallet(process.env.WALLET_PRIVATE_KEY);
   const encryptedJsonKey = await wallet.encrypt(
-    "password",
+    process.env.PRIVATE_KEY_PASSWORD,
     process.env.WALLET_PRIVATE_KEY
   );
   fs.writeFileSync("./encryptedKey.json", encryptedJsonKey);
